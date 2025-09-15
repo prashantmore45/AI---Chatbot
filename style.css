@@ -140,6 +140,16 @@ body {
     animation: popIn 0.4s ease forwards;
 }
 
+.chats-container .bot-message.loading .avatar {
+    animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 /* Message Text */
 .message-text {
     font-size: 0.95rem;
