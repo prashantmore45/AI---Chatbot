@@ -57,7 +57,7 @@ body {
     margin-top: 0.3rem;
 }
 
-/* ------------------- Suggestions List ------------------- */
+/* ---------- Suggestions List --------- */
 .suggestions {
     list-style: none;
     display: flex;
@@ -94,4 +94,54 @@ body {
 .suggestions-item span {
     font-size: 1.5rem;
     color: var(--accent-color);
+}
+
+
+/* --------- Chat Messages ------------ */
+.chats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.message {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    max-width: 80%;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    word-break: break-word;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeSlideIn 0.5s ease forwards;
+}
+
+.user-message {
+    background: var(--user-msg-bg);
+    align-self: flex-end;
+    animation-delay: 0.2s;
+}
+
+.bot-message {
+    background: var(--bot-msg-bg);
+    align-self: flex-start;
+    animation-delay: 0.3s;
+}
+
+.bot-message .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    animation: popIn 0.4s ease forwards;
+}
+
+/* Message Text */
+.message-text {
+    font-size: 0.95rem;
+    color: var(--text-color);
 }
