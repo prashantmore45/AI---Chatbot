@@ -145,3 +145,104 @@ body {
     font-size: 0.95rem;
     color: var(--text-color);
 }
+
+/* -------- Prompt Section -------- */
+.prompt-container {
+    background: var(--secondary-color);
+    padding: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    animation: fadeSlideIn 0.6s ease forwards 0.4s;
+}
+
+.prompt-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.prompt-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    background: var(--primary-color);
+    padding: 0.5rem 0.8rem;
+    border-radius: 12px;
+    transition: box-shadow 0.3s ease;
+}
+
+.prompt-form:focus-within {
+    box-shadow: 0 0 10px var(--accent-color);
+}
+
+.prompt-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.prompt-input::placeholder {
+    color: var(--placeholder-color);
+}
+
+/* Attach & Send Buttons inside prompt */
+.prompt-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.prompt-actions button {
+    background: var(--accent-color);
+    border: none;
+    border-radius: 12px;
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #fff;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.prompt-actions button:hover {
+    background: #6670ff;
+    transform: scale(1.2) rotate(-3deg);
+}
+
+/* Theme + Delete Buttons outside input */
+#theme-toggle-btn,
+#delete-chats-btn {
+    background: var(--hover-color);
+    border: none;
+    border-radius: 50%;
+    padding: 0.5rem;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+#theme-toggle-btn:hover,
+#delete-chats-btn:hover {
+    background: #8090ff;
+    transform: scale(1.3) rotate(10deg);
+}
+
+/* Disclaimer */
+.disclaimer {
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.disclaimer-text {
+    font-size: 0.85rem;
+    color: var(--subheading-color);
+}
+
