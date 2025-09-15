@@ -17,6 +17,35 @@ const createMsgElement = (content, ...classes) => {
     return div;
 };
 
+// Convert Gemini markdown response into HTML
+const formatResponse = (rawText) => {
+  return rawText
+    // Headings ## or #
+    .replace(/^##\s?(.*)$/gm, "<h3>$1</h3>")
+    .replace(/^#\s?(.*)$/gm, "<h2>$1</h2>")
+    // Bold **text**
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    // Italics *text*
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    // Inline code `code`
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    // Blockquotes > text
+    .replace(/^>\s?(.*)$/gm, "<blockquote>$1</blockquote>")
+    // Numbered lists
+    .replace(/^\d+\.\s+(.*)$/gm, "<li>$1</li>")
+    // Bulleted lists
+    .replace(/^[-*]\s+(.*)$/gm, "<li>$1</li>")
+    // Wrap consecutive <li> into <ul> or <ol>
+    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    // Paragraphs
+    .replace(/\n{2,}/g, "</p><p>")
+    // Line breaks
+    .replace(/\n/g, "<br>")
+    // Wrap all in <p>
+    .trim();
+};
+
+
 // Make the API call and generate the bot's response
 const generateResponse = async (botMsgDiv) => {
     const textElement = botMsgDiv.querySelector(".message-text");
@@ -36,9 +65,14 @@ const generateResponse = async (botMsgDiv) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error.message);
 
-        //Process the response text and display it 
-        const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
-        textElement.textContent = responseText;
+        const rawText = data.candidates[0].content.parts[0].text;
+        const formattedHTML = formatResponse(rawText);
+
+        // Show formatted HTML directly instead of typing plain text
+        textElement.innerHTML = formattedHTML;
+        botMsgDiv.classList.remove("loading");
+
+        
     } catch (error) {
         console.error("Error:", error);
     }
