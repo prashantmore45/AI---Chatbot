@@ -56,3 +56,42 @@ body {
     color: var(--subheading-color);
     margin-top: 0.3rem;
 }
+
+/* ------------------- Suggestions List ------------------- */
+.suggestions {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.suggestions-item {
+    background: var(--secondary-color);
+    padding: 1rem;
+    border-radius: 12px;
+    flex: 1 1 45%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    animation: fadeSlideIn 0.5s ease forwards;
+}
+
+.suggestions-item:hover {
+    background: var(--hover-color);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+}
+
+.suggestions-item .text {
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.suggestions-item span {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+}
