@@ -1,3 +1,4 @@
+const container = document.querySelector(".container");
 const chatsContainer = document.querySelector(".chats-container");
 const promptForm = document.querySelector(".prompt-form");
 const promptInput = promptForm.querySelector(".prompt-input");
@@ -16,6 +17,8 @@ const createMsgElement = (content, ...classes) => {
     div.innerHTML = content;
     return div;
 };
+
+const scrollToBottom = () => chatsContainer.scrollTo({ top: chatsContainer.scrollHeight, behavior: "smooth"});
 
 // Convert Gemini markdown response into HTML
 const formatResponse = (rawText) => {
@@ -72,6 +75,8 @@ const generateResponse = async (botMsgDiv) => {
         textElement.innerHTML = formattedHTML;
         botMsgDiv.classList.remove("loading");
 
+        scrollToBottom();
+
         
     } catch (error) {
         console.error("Error:", error);
@@ -91,12 +96,14 @@ const handleFormSubmit = (e) => {
     const userMsgDiv = createMsgElement(userMsgHTML, "user-message");
     userMsgDiv.querySelector(".message-text").textContent = userMessage;
     chatsContainer.appendChild(userMsgDiv);
+    scrollToBottom();
 
     // Generate bot message HTML and add in the chats container after 600ms
     setTimeout(() => {
         const botMsgHTML = `<img src="gemini-logo.svg" class="avatar"><p class="message-text">Just a sec...</p>`;
         const botMsgDiv = createMsgElement(botMsgHTML, "bot-message", "loading");
         chatsContainer.appendChild(botMsgDiv);
+        scrollToBottom();
         generateResponse(botMsgDiv);
     }, 600);
 };
