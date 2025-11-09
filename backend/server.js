@@ -1,6 +1,5 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
@@ -10,27 +9,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Get correct path handling for ES modules
+// Correct path handling for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS setup – allow frontend domain
-app.use(cors({
-  origin: [
-    "https://ai-chatbot-b8k7.onrender.com", // frontend Render URL
-    "http://localhost:5500" // for local testing
-  ],
-  methods: ["GET", "POST"],
-  credentials: true
-}));
+// ✅ Manual CORS fix
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://ai-chatbot-b8k7.onrender.com"); // your frontend URL
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
-// ✅ Middleware
 app.use(express.json());
 
-// ✅ Serve frontend (public) folder
+// ✅ Serve frontend (for local testing if needed)
 app.use(express.static(path.join(__dirname, "../public")));
 
-// ✅ API endpoint for Gemini or proxy
+// ✅ API endpoint for Gemini
 app.post("/api/generate", async (req, res) => {
   try {
     const { message, history } = req.body;
@@ -52,10 +51,9 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
-// ✅ Fallback route (for SPA or reloads)
+// ✅ Fallback route
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-// ✅ Start server
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
