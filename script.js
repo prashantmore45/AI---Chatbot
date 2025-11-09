@@ -2,9 +2,12 @@ const container = document.querySelector(".container");
 const chatsContainer = document.querySelector(".chats-container");
 const promptForm = document.querySelector(".prompt-form");
 const promptInput = promptForm.querySelector(".prompt-input");
+const fileInput = promptForm.querySelector("#file-input");
+const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
+
 
 // API Setup
-const API_KEY = "AIzaSyAvwl_JsR40FygHXCCah5QExDQtTotvNKc";
+const API_KEY = "";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
 let userMessage = "";
@@ -100,7 +103,12 @@ const handleFormSubmit = (e) => {
 
     // Generate bot message HTML and add in the chats container after 600ms
     setTimeout(() => {
-        const botMsgHTML = `<img src="gemini-logo.svg" class="avatar"><p class="message-text">Just a sec...</p>`;
+        const botMsgHTML = `<div class="bot-message-wrapper">
+            <img src="gemini-logo.svg" class="avatar">
+            <div class="bot-message message loading">
+                <p class="message-text">Just a sec...</p>
+            </div>
+        </div>`;
         const botMsgDiv = createMsgElement(botMsgHTML, "bot-message", "loading");
         chatsContainer.appendChild(botMsgDiv);
         scrollToBottom();
@@ -108,4 +116,25 @@ const handleFormSubmit = (e) => {
     }, 600);
 };
 
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith("image/");
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = (e) => {
+        fileInput.value = "";
+        fileUploadWrapper.querySelector(".file-preview").src = e.target.result;
+        fileUploadWrapper.classList.add("active", "img-attached", "file-attached");
+    }
+});
+
+document.querySelector("#cancel-file-btn").addEventListener("click", () => {
+    fileUploadWrapper.classList.remove("active", isImage ? "img-attached" : "file-attached");
+})
+
 promptForm.addEventListener("submit", handleFormSubmit);
+
+promptForm.querySelector("#add-file-btn").addEventListener("click", () => fileInput.click());

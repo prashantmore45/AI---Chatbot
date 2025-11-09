@@ -127,13 +127,21 @@ body {
     animation-delay: 0.2s;
 }
 
-.bot-message {
-    background: var(--bot-msg-bg);
-    align-self: flex-start;
-    animation-delay: 0.3s;
+.bot-message-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    animation: fadeSlideIn 0.5s ease forwards;
 }
 
-.bot-message .avatar {
+.bot-message-wrapper .bot-message {
+    background: var(--bot-msg-bg);
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    max-width: 80%;
+}
+
+.bot-message-wrapper .avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -209,6 +217,52 @@ body {
     display: flex;
     gap: 0.4rem;
 }
+
+/* Base wrapper */
+.prompt-form .file-upload-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Hide everything by default */
+.prompt-form .file-upload-wrapper :where(button, img) {
+    display: none;
+}
+
+/* ---------- When NOT active ---------- */
+/* Show only add-file button */
+.prompt-form .file-upload-wrapper:not(.active) #add-file-btn {
+    display: inline-block;
+}
+
+/* ---------- When Active ---------- */
+/* Show image preview + file icon */
+.prompt-form .file-upload-wrapper.active .img-preview,
+.prompt-form .file-upload-wrapper.active .file-icon {
+    display: inline-block;
+}
+
+/* Size the image like the icons */
+.prompt-form .file-upload-wrapper.active .img-preview {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px; /* slight rounding for preview */
+    object-fit: cover;
+}
+
+/* Hide add button when active */
+.prompt-form .file-upload-wrapper.active #add-file-btn {
+    display: none;
+}
+
+/* Show cancel button when active */
+.prompt-form .file-upload-wrapper.active #cancle-file-btn {
+    display: inline-block;
+    color: #d62939;
+}
+
 
 .prompt-actions button {
     background: var(--accent-color);
@@ -316,4 +370,44 @@ body {
     .prompt-input {
         font-size: 0.9rem;
     }
+}
+
+/* Styling for Markdown elements rendered by the model */
+
+/* Code Blocks */
+pre {
+    background: #1f2a3c; /* Matches bot message background */
+    color: #f8f8f2;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    font-family: 'Consolas', 'Monaco', monospace;
+    margin-top: 0.8rem;
+}
+
+/* Inline Code */
+code {
+    background: rgba(151, 167, 202, 0.2); /* Soft highlight */
+    color: var(--text-color);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Lists and Blockquotes */
+ul, ol {
+    margin: 0.5rem 0 0.5rem 1.5rem;
+}
+
+li {
+    margin-bottom: 0.3rem;
+}
+
+blockquote {
+    border-left: 4px solid var(--accent-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--subheading-color);
+    font-style: italic;
 }

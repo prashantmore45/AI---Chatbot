@@ -6,6 +6,9 @@
     <title>AI Chatbot | PM</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.2/dist/purify.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -44,9 +47,16 @@ code_blocks
         <div class="prompt-container">
             <div class="prompt-wrapper">
                 <form action="#" class="prompt-form">
-                    <input type="text" placeholder="Ask Gemini" class="prompt-input">
+                    <input type="text" placeholder="Ask Gemini" class="prompt-input" required>
                     <div class="prompt-actions">
-                        <button id="add-file-btn" type="button" class="material-symbols-rounded">attach_file</button>
+                        <div class="file-upload-wrapper">
+                            <img src="#" class="file-preview">
+                            <input type="file" accept="image/*, .pdf, .txt, .csv" id="file-input" hidden>
+                            <button type="button" class="file-icon material-symbols-rounded">description</button>
+                            <button id="add-file-btn" type="button" class="material-symbols-rounded">attach_file</button>
+                            <button id="cancel-file-btn" type="button" class="material-symbols-rounded">close</button>
+                        </div>
+                        
                         <button id="send-prompt-btn" class="material-symbols-rounded">arrow_upward</button>
                     </div>
                 </form>
