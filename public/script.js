@@ -7,8 +7,13 @@ const promptInput = promptForm.querySelector(".prompt-input");
 const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 
-// API Proxy Endpoint
-const PROXY_API_URL = "http://localhost:3000/api/generate";
+
+// Use live API when deployed, otherwise localhost for development
+const PROXY_API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000/api/generate"
+    : "https://ai-chatbot.onrender.com/api/generate";
+
 
 let userMessage = "";
 let chatHistory = [];
