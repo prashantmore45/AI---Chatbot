@@ -14,8 +14,17 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
-app.use(cors());
+// ✅ CORS setup – allow frontend domain
+app.use(cors({
+  origin: [
+    "https://ai-chatbot-b8k7.onrender.com", // frontend Render URL
+    "http://localhost:5500" // for local testing
+  ],
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
+// ✅ Middleware
 app.use(express.json());
 
 // ✅ Serve frontend (public) folder
@@ -43,10 +52,10 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
-// ✅ FIXED fallback route (for SPA or reloads)
+// ✅ Fallback route (for SPA or reloads)
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-// Start server
+// ✅ Start server
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
