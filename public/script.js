@@ -8,12 +8,10 @@ const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 
 
-// Use live API when deployed, otherwise localhost for development
 const PROXY_API_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:3000/api/generate"
     : "https://ai-chatbot.onrender.com/api/generate";
-
 
 let userMessage = "";
 let chatHistory = [];
@@ -42,7 +40,6 @@ const formatResponse = (rawText = "") => {
     // Lists
     .replace(/^\d+\.\s+(.*)$/gm, "<li>$1</li>")
     .replace(/^[-*]\s+(.*)$/gm, "<li>$1</li>")
-    // Wrap consecutive list items
     .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
     // Paragraphs and line breaks
     .replace(/\n{2,}/g, "</p><p>")
@@ -58,11 +55,9 @@ const createMsgElement = (content, ...classes) => {
   return div;
 };
 
-// Main: Call the backend proxy
 const generateResponse = async (botMsgDiv) => {
   const textElement = botMsgDiv.querySelector(".message-text");
 
-  // Push user's message into chat history
   chatHistory.push({
     role: "user",
     parts: [{ text: userMessage }],
@@ -79,33 +74,32 @@ const generateResponse = async (botMsgDiv) => {
     });
 
     const data = await response.json();
-    console.log("✅ API Response:", data);
+    console.log("🎯 FULL API Response:", JSON.stringify(data, null, 2));
 
-    // --- Handle non-OK response ---
     if (!response.ok) {
-      const errMsg = data.error || "Unexpected API error";
+      const errMsg = data.error || "Unexpected server error";
       throw new Error(errMsg);
     }
 
-    // --- Extract bot reply safely ---
+    // Correct AI text from backend
     const rawText = data.response || "⚠️ No response from server.";
     const formattedHTML = formatResponse(rawText);
 
-    // --- Update local history with server’s updated version ---
+    // Update frontend history with backend-updated history
     chatHistory = data.updatedHistory || chatHistory;
 
-    // --- Show formatted message ---
+    // Display formatted AI response
     textElement.innerHTML = formattedHTML;
     botMsgDiv.classList.remove("loading");
     scrollToBottom();
+
   } catch (error) {
     console.error("❌ Error:", error);
-    textElement.innerHTML = `<p class="message-text">Error: ${error.message}</p>`;
+    textElement.innerHTML = `<p>Error: ${error.message}</p>`;
     botMsgDiv.classList.remove("loading");
   }
 };
 
-// Handle user message submission
 const handleFormSubmit = (e) => {
   e.preventDefault();
   userMessage = promptInput.value.trim();
@@ -113,13 +107,11 @@ const handleFormSubmit = (e) => {
 
   promptInput.value = "";
 
-  // --- Display user message ---
   const userMsgHTML = `<p class="message-text">${userMessage}</p>`;
   const userMsgDiv = createMsgElement(userMsgHTML, "user-message");
   chatsContainer.appendChild(userMsgDiv);
   scrollToBottom();
 
-  // --- Add bot typing placeholder ---
   setTimeout(() => {
     const botMsgHTML = `
       <div class="bot-message-wrapper">
@@ -129,6 +121,7 @@ const handleFormSubmit = (e) => {
         </div>
       </div>
     `;
+
     const botMsgDiv = createMsgElement(botMsgHTML, "bot-message", "loading");
     chatsContainer.appendChild(botMsgDiv);
     scrollToBottom();
@@ -137,32 +130,42 @@ const handleFormSubmit = (e) => {
   }, 500);
 };
 
-// --- File handling (future multimodal) ---
 fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
-  attachedFile = file;
 
+  attachedFile = file;
   const isImage = file.type.startsWith("image/");
   const reader = new FileReader();
-  reader.readAsDataURL(file);
 
+  reader.readAsDataURL(file);
   reader.onload = (e) => {
     fileInput.value = "";
     const preview = fileUploadWrapper.querySelector(".file-preview");
     preview.src = e.target.result;
-    fileUploadWrapper.classList.add("active", isImage ? "img-attached" : "file-attached");
+    fileUploadWrapper.classList.add(
+      "active",
+      isImage ? "img-attached" : "file-attached"
+    );
   };
 });
 
-document.querySelector("#cancel-file-btn").addEventListener("click", () => {
-  attachedFile = null;
-  const preview = fileUploadWrapper.querySelector(".file-preview");
-  preview.src = "#";
-  fileUploadWrapper.classList.remove("active", "img-attached", "file-attached");
+document
+  .querySelector("#cancel-file-btn")
+  .addEventListener("click", () => {
+    attachedFile = null;
+    const preview = fileUploadWrapper.querySelector(".file-preview");
+    preview.src = "#";
+    fileUploadWrapper.classList.remove(
+      "active",
+      "img-attached",
+      "file-attached"
+    );
+  });
+
+promptForm.querySelector("#add-file-btn").addEventListener("click", () => {
+  fileInput.click();
 });
 
-promptForm.querySelector("#add-file-btn").addEventListener("click", () => fileInput.click());
-
-// --- Initialize event listener ---
+// Initialize form listener
 promptForm.addEventListener("submit", handleFormSubmit);
