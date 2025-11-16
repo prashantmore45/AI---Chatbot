@@ -11,7 +11,7 @@ const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 const PROXY_API_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:3000/api/generate"
-    : "https://ai-chatbot.onrender.com/api/generate";
+    : "https://ai-chatbot-backend-vzzr.onrender.com/api/generate";
 
 let userMessage = "";
 let chatHistory = [];

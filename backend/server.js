@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 app.use((req, res, next) => {
   const allowedOrigin =
     process.env.NODE_ENV === "production"
-      ? "https://ai-chatbot-b8k7.onrender.com"
+      ? "https://ai-chatbot-frontend-u8e6.onrender.com"
       : "http://localhost:5500";
 
   res.header("Access-Control-Allow-Origin", allowedOrigin);
