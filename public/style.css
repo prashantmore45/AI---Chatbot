@@ -218,6 +218,14 @@ body {
     gap: 0.4rem;
 }
 
+#model-select {
+  background: var(--secondary-color);
+  color: var(--text-color);
+  border-radius: 8px;
+  border: none;
+  padding: 0.3rem;
+}
+
 /* Base wrapper */
 .prompt-form .file-upload-wrapper {
     position: relative;

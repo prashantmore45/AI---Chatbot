@@ -8,6 +8,8 @@ const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 const deleteChatsBtn = document.querySelector("#delete-chats-btn");
 const suggestions = document.querySelector(".suggestions");
+const modelSelect = document.querySelector("#model-select");
+
 
 let streamAbortController = null;
 
@@ -98,7 +100,11 @@ const streamResponse = async ({ message, history, onChunk, onEnd, onError }) => 
   const response = await fetch("http://localhost:3000/api/generate-stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({
+      message,
+      history,
+      model: modelSelect?.value || "",
+    }),
     signal: streamAbortController.signal,
   });
 
@@ -145,60 +151,6 @@ const streamResponse = async ({ message, history, onChunk, onEnd, onError }) => 
   onEnd();
 };
 
-// const generateResponse = async (botMsgDiv) => {
-//   const textElement = botMsgDiv.querySelector(".message-text");
-
-//   chatHistory.push({
-//     role: "user",
-//     parts: [{ text: userMessage }],
-//   });
-
-//   try {
-//     if (chatHistory.length > MAX_HISTORY_LENGTH) {
-//       chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
-//     }
-
-//     const response = await fetch(PROXY_API_URL, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         message: userMessage,
-//         history: chatHistory,
-//       }),
-//     });
-
-//     const data = await response.json();
-//     console.log("🎯 FULL API Response:", JSON.stringify(data, null, 2));
-
-//     if (!response.ok) {
-//       const errMsg = data.error || "Unexpected server error";
-//       throw new Error(errMsg);
-//     }
-
-//     // Correct AI text from backend
-//     const rawText = data.response || "⚠️ No response from server.";
-//     const formattedHTML = formatResponse(rawText);
-
-//     // Update frontend history with backend-updated history
-//     chatHistory = data.updatedHistory || chatHistory;
-
-//     saveHistory();
-
-//     // Display formatted AI response
-//     const safeHTML = DOMPurify.sanitize(formattedHTML);
-//     typeWriter(textElement, safeHTML);
-
-//     botMsgDiv.classList.remove("loading");
-//     scrollToBottom();
-
-//   } catch (error) {
-//     console.error("❌ Error:", error);
-//     textElement.innerHTML = `<p>Error: ${error.message}</p>`;
-//     botMsgDiv.classList.remove("loading");
-//   }
-// };
-
-
 const generateResponse = async (botMsgDiv) => {
 
   setInputState(true);
@@ -209,10 +161,6 @@ const generateResponse = async (botMsgDiv) => {
     role: "user",
     parts: [{ text: userMessage }],
   });
-
-  if (chatHistory.length > MAX_HISTORY_LENGTH) {
-    chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
-  }
 
   let accumulatedHTML = "";
   let accumulatedText = "";
@@ -242,8 +190,13 @@ const generateResponse = async (botMsgDiv) => {
           .replace(/\n{3,}/g, "\n\n")     // collapse noise
           .trim();
 
+        const cleaned = normalized.replace(
+          /^(Can you|Could you|Would you|Do you|Are you).*\?\s*/i,
+          ""
+        );
+
         // Convert to HTML
-        const markdownHTML = marked.parse(normalized);
+        const markdownHTML = marked.parse(cleaned || normalized);
         textElement.innerHTML = DOMPurify.sanitize(markdownHTML);
 
         // Save CLEAN plain text
@@ -266,8 +219,16 @@ const generateResponse = async (botMsgDiv) => {
             <p>You’ve hit the free Gemini API quota.</p>
             <p>Please wait about a minute and try again.</p>
           `;
+
+          chatHistory.push({
+            role: "model",
+            parts: [{ text: "API quota exceeded. Please retry later." }],
+          });
+
+          saveHistory();
           return;
         }
+
 
         textElement.innerHTML = `<p>❌ Streaming unavailable</p>`;
       },

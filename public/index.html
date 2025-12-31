@@ -49,6 +49,11 @@ code_blocks
                 <form action="#" class="prompt-form">
                     <input type="text" placeholder="Ask Gemini" class="prompt-input" required>
                     <div class="prompt-actions">
+                        <select id="model-select" title="Model">
+                            <option value="">Auto</option>
+                            <option value="fast">⚡ Fast</option>
+                            <option value="smart">🧠 Smart</option>
+                        </select>
                         <div class="file-upload-wrapper">
                             <img src="#" class="file-preview">
                             <input type="file" accept="image/*, .pdf, .txt, .csv" id="file-input" hidden>
