@@ -10,10 +10,24 @@ const deleteChatsBtn = document.querySelector("#delete-chats-btn");
 const suggestions = document.querySelector(".suggestions");
 const modelSelect = document.querySelector("#model-select");
 
+let autoScrollEnabled = true;
+const SCROLL_THRESHOLD = 60; // px from bottom
 
+let isSending = false;
+let lastUserMessage = "";
 let streamAbortController = null;
 
 const MAX_HISTORY_LENGTH = 8;
+
+const setViewportHeight = () => {
+  document.documentElement.style.setProperty(
+    "--vh",
+    `${window.innerHeight * 0.01}px`
+  );
+};
+
+setViewportHeight();
+window.addEventListener("resize", setViewportHeight);
 
 const setInputState = (disabled) => {
   promptInput.disabled = disabled;
@@ -42,11 +56,23 @@ let chatHistory = [];
 let attachedFile = null;
 
 // Utility: Smooth scroll
-const scrollToBottom = () =>
+const scrollToBottom = () => {
+  if (!autoScrollEnabled) return;
+
   chatsContainer.scrollTo({
     top: chatsContainer.scrollHeight,
     behavior: "smooth",
   });
+};
+
+chatsContainer.addEventListener("scroll", () => {
+  const distanceFromBottom =
+    chatsContainer.scrollHeight -
+    chatsContainer.scrollTop -
+    chatsContainer.clientHeight;
+
+  autoScrollEnabled = distanceFromBottom < SCROLL_THRESHOLD;
+});
 
 // Utility: Convert markdown-ish Gemini output into readable HTML
 const formatResponse = (rawText = "") => {
@@ -174,11 +200,13 @@ const generateResponse = async (botMsgDiv) => {
         accumulatedText += textChunk;
 
         // Show raw text temporarily (no formatting yet)
-        textElement.textContent = accumulatedText;
+        textElement.innerHTML = `<span class="streaming-text">${accumulatedText}</span><span class="streaming-cursor"></span>`;
+
         scrollToBottom();
       },
 
       onEnd: () => {
+        isSending = false; // 🔓 UNLOCK on success
         setInputState(false);
         streamAbortController = null;
         botMsgDiv.classList.remove("loading");
@@ -215,10 +243,15 @@ const generateResponse = async (botMsgDiv) => {
 
         if (msg === "QUOTA_EXCEEDED") {
           textElement.innerHTML = `
-            <p>⚠️ <strong>API limit reached</strong></p>
-            <p>You’ve hit the free Gemini API quota.</p>
-            <p>Please wait about a minute and try again.</p>
+            <p>⚠️ <strong>Rate limit reached</strong></p>
+            <p>Please wait ~60 seconds.</p>
+            <button class="retry-btn">Try Again</button>
           `;
+
+          textElement.querySelector(".retry-btn").onclick = () => {
+            userMessage = lastUserMessage;
+            generateResponse(botMsgDiv);
+          };
 
           chatHistory.push({
             role: "model",
@@ -230,7 +263,16 @@ const generateResponse = async (botMsgDiv) => {
         }
 
 
-        textElement.innerHTML = `<p>❌ Streaming unavailable</p>`;
+        textElement.innerHTML = `
+          <p>❌ <strong>Connection interrupted</strong></p>
+          <button class="retry-btn">Retry</button>
+        `;
+
+        const retryBtn = textElement.querySelector(".retry-btn");
+        retryBtn.onclick = () => {
+          userMessage = lastUserMessage;
+          generateResponse(botMsgDiv);
+        };
       },
     });
   } catch (error) {
@@ -243,8 +285,15 @@ const generateResponse = async (botMsgDiv) => {
 
 const handleFormSubmit = (e) => {
   e.preventDefault();
+
+  if (isSending) return; // 🚫 BLOCK double submit
+
   userMessage = promptInput.value.trim();
+  lastUserMessage = userMessage;
+
   if (!userMessage) return;
+
+  isSending = true; // 🔒 LOCK immediately
 
   promptInput.value = "";
 
@@ -255,7 +304,7 @@ const handleFormSubmit = (e) => {
   if (suggestions) {
     suggestions.style.display = "none";
   }
-
+  autoScrollEnabled = true;
   scrollToBottom();
 
   setTimeout(() => {
@@ -263,17 +312,22 @@ const handleFormSubmit = (e) => {
       <div class="bot-message-wrapper">
         <img src="gemini-logo.svg" class="avatar" alt="AI">
         <div class="bot-message message loading">
-          <p class="message-text">AI is typing...</p>
+          <p class="message-text"><em>Thinking…</em></p>
         </div>
       </div>
     `;
 
     const botMsgDiv = createMsgElement(botMsgHTML, "bot-message", "loading");
     chatsContainer.appendChild(botMsgDiv);
+    autoScrollEnabled = true;
     scrollToBottom();
 
     generateResponse(botMsgDiv);
   }, 500);
+
+  if (window.innerWidth < 768) {
+    setTimeout(() => promptInput.focus(), 300);
+  }
 };
 
 fileInput.addEventListener("change", () => {
@@ -318,9 +372,11 @@ promptForm.addEventListener("submit", handleFormSubmit);
 
 loadHistory();
 
-if (chatHistory.length > 0 && suggestions) {
-  suggestions.style.display = "none";
+// Show suggestions ONLY if no messages rendered yet
+if (suggestions && chatsContainer.children.length === 0) {
+  suggestions.style.display = "flex";
 }
+
 
 deleteChatsBtn.addEventListener("click", () => {
   const confirmClear = confirm("Are you sure you want to delete all chats?");
@@ -341,8 +397,44 @@ deleteChatsBtn.addEventListener("click", () => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && streamAbortController) {
-    streamAbortController.abort();
-    streamAbortController = null;
-    setInputState(false);
+  streamAbortController.abort();
+  streamAbortController = null;
+  isSending = false;
+  setInputState(false);
+
+  const lastBot = document.querySelector(".bot-message.loading .message-text");
+  if (lastBot) {
+    lastBot.innerHTML = `<em>Response stopped</em>`;
   }
-});
+}});
+
+
+// ===============================
+// Phase 4.3.1 — Clickable Suggestions
+// ===============================
+
+if (suggestions) {
+  suggestions.addEventListener("click", (e) => {
+    const item = e.target.closest(".suggestions-item");
+    if (!item) return;
+
+    const text = item.querySelector(".text")?.innerText;
+    if (!text) return;
+
+    // Fill input
+    promptInput.value = text;
+    lastUserMessage = text;
+
+    // Hide suggestions
+    suggestions.style.display = "none";
+
+    // Trigger send
+    promptForm.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+  });
+}
+
+// ===============================
+// End of File
+// ===============================
