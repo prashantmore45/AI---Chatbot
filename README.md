@@ -1,213 +1,91 @@
-📌 AI Chatbot – Full Stack Gemini-Powered Chatbot (Frontend + Backend)
+# ✦ Gemini AI Chatbot (Production Ready)
 
-An AI-powered chatbot web application built with:
+![Gemini AI Badge](https://img.shields.io/badge/AI-Gemini%202.5-blue?style=for-the-badge&logo=google)
+![NodeJS Badge](https://img.shields.io/badge/Backend-Node.js-green?style=for-the-badge&logo=nodedotjs)
+![Status Badge](https://img.shields.io/badge/Status-Deployed-success?style=for-the-badge)
 
-Frontend: HTML, CSS, JavaScript
-Backend: Node.js (Express)
+A fully functional, mobile-responsive AI Chatbot that replicates the official Google Gemini interface. Built with **Node.js** and the latest **Google Generative AI SDK**, it features real-time text streaming, multimodal image analysis, and persistent chat memory.
 
-AI Engine: Google Gemini 2.5 Flash (via Google Generative Language API)
+## 🌟 Key Features
 
-Deployment:
+* **⚡ Latest AI Models:** Powered by **Gemini 2.5 Flash** (fast) and **Gemini 2.5 Pro** (reasoning).
+* **🌊 Real-Time Streaming:** Uses Server-Sent Events (SSE) for buttery-smooth, typewriter-style text generation.
+* **🖼️ Multimodal Support:** Upload images (drag & drop or select) to ask questions about visual content.
+* **🧠 Conversation Memory:** Remembers context from previous messages during the session.
+* **🎨 Professional UI:**
+    * Exact replica of Gemini's Dark Mode aesthetic.
+    * Floating input bar with "pill" design.
+    * Fully responsive (works perfectly on Mobile keyboards).
+    * Markdown rendering for code blocks, tables, and lists.
+* **🛡️ Robust Error Handling:** Gracefully handles API rate limits and network issues.
 
-Frontend: Render Static Site
-Backend: Render Web Service
+---
 
-The chatbot provides real-time conversational responses using Google Gemini API and supports multi-turn chat history.
+## 🛠️ Tech Stack
 
+### Frontend
+* **HTML5 / CSS3:** Custom CSS variables for theming (Dark/Light mode).
+* **Vanilla JavaScript:** Lightweight, fast, and dependency-free frontend logic.
+* **Libraries:** `marked.js` (Markdown parsing), `DOMPurify` (Security/Sanitization).
 
-🚀 Live Demo
+### Backend
+* **Node.js & Express:** REST API and Stream handling.
+* **@google/generative-ai:** Official Google SDK for model interaction.
+* **File System (fs/promises):** Asynchronous JSON-based memory storage.
 
-🔗 Frontend:
+---
 
-https://ai-chatbot-frontend-u8e6.onrender.com
+## 🚀 Getting Started
 
-🔗 Backend (API):
+### Prerequisites
+* Node.js (v18 or higher recommended)
+* A Google Cloud API Key (Get it from [Google AI Studio](https://aistudio.google.com/))
 
-https://ai-chatbot-backend-vzzr.onrender.com
+### Installation
 
+1.  **Clone the repository**
+    ```bash
+    git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
+    cd your-repo-name
+    ```
 
-✨ Features
+2.  **Install Dependencies**
+    Navigate to the backend folder and install the required packages:
+    ```bash
+    cd backend
+    npm install
+    ```
 
-🔹 AI Features
+3.  **Configure Environment**
+    Create a `.env` file in the `backend` directory:
+    ```env
+    PORT=3000
+    GEMINI_API_KEY=your_actual_api_key_here
+    ```
 
-Gemini 2.5 Flash model integration
-Real-time chat responses
-Multi-turn conversation (chat memory)
-Markdown formatting (headings, lists, code blocks, bold, italics)
+4.  **Run the Server**
+    ```bash
+    node server.js
+    ```
 
-🔹 Frontend
+5.  **Launch**
+    Open your browser and visit: `http://localhost:3000`
 
-Clean chat UI
-Smooth scroll
-Loading/typing animation
-Mobile responsive
-File upload UI (future support)
+---
 
-🔹 Backend
+## 📂 Project Structure
 
-Express server
-CORS protected for production
-Secure API key usage
-Request → Gemini → Response pipeline
-Auto-updated chat history logic
-
-🔹 Deployment
-
-Frontend deployed on Render Static Site
-Backend deployed on Render Web Service
-Fully configured CORS
-Clean and scalable monorepo structure
-
-
-📂 Project Folder Structure
-AI---Chatbot/
+```text
+├── public/                 # Frontend Assets
+│   ├── index.html          # Main UI Structure
+│   ├── style.css           # Gemini Dark/Light Theme Styles
+│   └── script.js           # Frontend Logic (Fetch, Streaming, UI)
 │
-├── backend/
-│   ├── server.js
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── .env           # Contains GEMINI_API_KEY
-│   └── node_modules/
+├── backend/                # Server Side
+│   ├── memory/             # JSON Storage for Chat History
+│   ├── node_modules/       # Dependencies
+│   ├── server.js           # Express Server & API Routes
+│   ├── package.json        # Project Manifest
+│   └── .env                # API Keys (Not shared in repo)
 │
-├── public/            # Frontend
-│   ├── index.html
-│   ├── style.css
-│   ├── script.js
-│   ├── assets/        # logos, images
-│   └── gemini-logo.svg
-│
-└── README.md
-
-
-🔑 Environment Variables
-
-Inside backend/.env:
-
-GEMINI_API_KEY=YOUR_API_KEY_HERE
-NODE_ENV=production
-
-⚠ Never commit .env to GitHub.
-
-🛠 Backend Setup (Local Development)
-1️⃣ Navigate to backend
-cd backend
-
-2️⃣ Install dependencies
-npm install
-
-3️⃣ Start server
-node server.js
-
-Server runs at:
-http://localhost:3000
-
-
-🌐 Frontend Setup (Local)
-
-You can run the frontend by simply opening:
-
-public/index.html
-
-or using VS Code Live Server.
-
-
-🔌 Connecting Frontend to Backend
-
-In script.js, the API URL logic:
-
-const PROXY_API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3000/api/generate"
-    : "https://ai-chatbot-backend-vzzr.onrender.com/api/generate";
-
-
-🔥 Backend API Route
-
-POST /api/generate
-Request Body:
-{
-  "message": "hi",
-  "history": [
-    {
-      "role": "user",
-      "parts": [{ "text": "previous message" }]
-    }
-  ]
-}
-
-Response:
-{
-  "response": "Hello! How can I help you?",
-  "updatedHistory": [...]
-}
-
-
-🔐 CORS Configuration
-
-To allow your frontend:
-
-res.header("Access-Control-Allow-Origin", "https://ai-chatbot-frontend-u8e6.onrender.com");
-res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-res.header("Access-Control-Allow-Headers", "Content-Type");
-
-
-🚀 Render Deployment Guide
-
-✅ Backend Deployment (Web Service)
-
-Root Directory: backend
-Build Command: npm install
-Start Command: node server.js
-Environment Variables → add GEMINI_API_KEY
-
-✅ Frontend Deployment (Static Site)
-
-Root Directory: (leave empty)
-Publish Directory: public
-Build Command: (empty)
-
-
-🧪 Testing
-
-After deployment:
-
-1. Visit frontend
-2. Type a message (like “hi”)
-3. You should get an AI response from Gemini
-
-If you see:
-
-❌ CORS error → Fix backend origin
-❌ Failed to fetch → Wrong API URL in script.js
-❌ No response → Check Gemini model & API key
-
-
-🔮 Future Enhancements (Planned)
-
-Chat UI redesign with bubbles
-Typing animation (…)
-Dark/light mode
-Voice input & text-to-speech
-File upload → Gemini Vision
-Local chat history save
-Conversation export (PDF/JSON)
-
-
-🤝 Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you’d like to add.
-
-
-📜 License
-
-This project is MIT licensed.
-
-
-🎉 Final Notes
-
-This project demonstrates:
-Full-stack app deployment
-Gemini 2.5 Flash integration
-Clean CORS + routing setup
-Frontend ↔ Backend communication
-You now have a fully deployed, production-ready AI Chatbot.
+└── README.md               # Documentation
