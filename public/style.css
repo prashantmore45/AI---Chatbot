@@ -101,9 +101,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 1rem;
+    padding: 60px 1rem 2rem 1rem;
     overflow-y: auto; /* Allow scrolling if suggestions overflow */
 }
 
@@ -152,7 +152,7 @@ body {
 .chats-container {
     flex: 1; /* Takes all available space */
     overflow-y: auto; /* Enables vertical scrolling */
-    padding: 0 1rem 1rem 1rem;
+    padding: 2rem 1rem 1rem 1rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -326,8 +326,57 @@ body {
     margin-top: 10px;
 }
 
+/* --- Footer Styling --- */
+.app-footer {
+    width: 100%;
+    padding: 15px 0;
+    margin-top: auto; /* Pushes footer to bottom if using flex column on body */
+    background-color: #131314; /* Matches body background */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-content strong {
+    color: #e3e3e3;
+}
+
+.social-links {
+    display: flex;
+    gap: 20px;
+}
+
+.social-links a {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.social-links a:hover {
+    color: #4da6ff; /* A nice blue accent on hover */
+}
+
 @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+/* Responsive adjustment for mobile */
+@media (max-width: 768px) {
+    .app-footer {
+        padding: 12px 0;
+        font-size: 0.75rem;
+    }
+}
 
 /* Mobile Optimizations */
 @media screen and (max-width: 600px) {
