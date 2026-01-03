@@ -16,7 +16,7 @@ let chatHistory = [];
 // Determine API URL based on environment
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api/generate-stream' 
-    : '/api/generate-stream';
+    : 'https://ai-chatbot-backend-vzzr.onrender.com/api/generate-stream';
 
 const toggleWelcomeScreen = () => {
     if (chatHistory.length > 0 || isGenerating) {
