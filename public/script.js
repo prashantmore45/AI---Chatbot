@@ -7,6 +7,56 @@ const welcomeScreen = document.querySelector(".welcome-screen");
 const sendBtn = document.querySelector("#send-prompt-btn");
 const modelSelect = document.querySelector("#model-select");
 
+
+// --- NEW: Configure Markdown + Syntax Highlighting + Copy Button ---
+const renderer = new marked.Renderer();
+renderer.code = ({ text, lang }) => {
+    const validLang = !!(lang && hljs.getLanguage(lang)) ? lang : 'plaintext';
+    const highlighted = hljs.highlight(text, { language: validLang }).value;
+    
+    // Create a unique ID for the code block (optional, but good practice)
+    const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
+
+    return `
+        <div class="code-block-wrapper">
+            <div class="code-header">
+                <span class="code-lang">${validLang}</span>
+                <button class="copy-btn" onclick="copyCode(this)">
+                    <span class="material-symbols-rounded">content_copy</span> Copy
+                </button>
+            </div>
+            <pre><code class="hljs ${validLang}">${highlighted}</code></pre>
+        </div>
+    `;
+};
+
+marked.use({ renderer });
+
+// Global function to copy code (attached to window so onclick works)
+window.copyCode = (btn) => {
+    // Find the code block inside the wrapper
+    const wrapper = btn.closest('.code-block-wrapper');
+    const codeBlock = wrapper.querySelector('code');
+    const text = codeBlock.innerText; // Get raw text
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+        // Visual Feedback
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-rounded">check</span> Copied!`;
+        btn.classList.add('copied');
+
+        // Revert back after 2 seconds
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+};
+// -----------------------------------------------------
+
 let userMessage = null;
 let attachedFile = null; 
 let isGenerating = false;
@@ -163,7 +213,7 @@ const handleFormSubmit = async (e) => {
                         
                         accumulatedText += textChunk;
                         // Render with Markdown
-                        textElement.innerHTML = marked.parse(accumulatedText);
+                        textElement.innerHTML = marked.parse(accumulatedText, { breaks: true });
                         
                         // Scroll automatically while generating
                         scrollToBottom(); 
