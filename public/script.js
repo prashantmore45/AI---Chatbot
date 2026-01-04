@@ -198,119 +198,140 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 
 
 // ==========================================
-// 🎙️ VOICE FEATURES (Universal Fix)
+// 🎙️ VOICE FEATURES (Mobile + Desktop Safe)
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let hasSubmitted = false;
 
 if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false; 
-    recognition.lang = 'en-US'; 
-    recognition.interimResults = true; 
-    recognition.maxAlternatives = 1;
+  const recognition = new SpeechRecognition();
 
-    let silenceTimer = null;
+  // ---- MOBILE SAFE SETTINGS ----
+  recognition.continuous = false;
+  recognition.lang = "en-US";
+  recognition.interimResults = false; // IMPORTANT for mobile
+  recognition.maxAlternatives = 1;
 
-    const toggleMic = () => {
-        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-            alert("Microphone Error: You must use HTTPS. Please deploy to Render.");
-            return;
-        }
+  let silenceTimer = null;
 
-        if (micBtn.classList.contains("listening")) {
-            recognition.stop(); 
-        } else {
-            recognition.start();
-        }
-    };
-
-    micBtn.addEventListener("click", toggleMic);
-
-    // --- 1. START: Clear box and show we are listening ---
-    recognition.onstart = () => {
-        micBtn.classList.add("listening");
-        promptInput.placeholder = "Listening...";
-        promptInput.value = ""; 
-    };
-
-    // --- 2. END: The Safety Net ---
-  
-    recognition.onend = () => {
-        micBtn.classList.remove("listening");
-        promptInput.placeholder = "Ask Gemini";
-
-        if (promptInput.value.trim().length > 0) {
-            console.log("Mic stopped. Sending message...");
-            promptForm.dispatchEvent(new Event("submit"));
-        }
-    };
-
-    // --- 3. RESULT: Handle Text & Timer ---
-    recognition.onresult = (event) => {
-        
-        if (silenceTimer) clearTimeout(silenceTimer);
-
-        const transcript = Array.from(event.results)
-            .map(result => result[0].transcript)
-            .join('');
-
-        promptInput.value = transcript;
-        updateSendBtnState(); // Light up the arrow button
-
-        silenceTimer = setTimeout(() => {
-            console.log("Silence detected. Stopping mic...");
-            recognition.stop(); // This triggers 'onend' -> which sends the form
-        }, 1200); 
-
-        if (event.results[0].isFinal) {
-            clearTimeout(silenceTimer);
-            silenceTimer = setTimeout(() => {
-                recognition.stop();
-            }, 600);
-        }
-    };
-
-    recognition.onerror = (event) => {
-        console.error("Voice Error:", event.error);
-        micBtn.classList.remove("listening");
-        if (event.error === 'no-speech') {
-            promptInput.placeholder = "No speech detected...";
-        } else if (event.error === 'not-allowed') {
-            alert("Microphone Blocked: Check settings.");
-        } else {
-            promptInput.placeholder = "Error: " + event.error;
-        }
-    };
-
-} else {
-    micBtn.style.display = "none";
-}
-
-// --- Text-to-Speech (Speaker) ---
-window.speakText = (btn) => {
-    const messageDiv = btn.closest('.message-content');
-    if (!messageDiv) return;
-    let text = messageDiv.innerText.replace('content_copy Copy', '').trim();
-    window.speechSynthesis.cancel();
-    
-    document.querySelectorAll('.speak-btn span').forEach(icon => { icon.innerText = 'volume_up'; });
-    if (btn.classList.contains('speaking')) {
-        btn.classList.remove('speaking');
-        return;
+  const toggleMic = () => {
+    if (
+      window.location.protocol !== "https:" &&
+      window.location.hostname !== "localhost"
+    ) {
+      alert("Microphone Error: HTTPS is required.");
+      return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    const iconSpan = btn.querySelector('span');
-    iconSpan.innerText = 'stop_circle';
-    btn.classList.add('speaking');
+    hasSubmitted = false;
 
-    utterance.onend = () => {
-        iconSpan.innerText = 'volume_up';
-        btn.classList.remove('speaking');
-    };
-    window.speechSynthesis.speak(utterance);
+    if (micBtn.classList.contains("listening")) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  };
+
+  micBtn.addEventListener("click", toggleMic);
+
+  // ---- 1. START LISTENING ----
+  recognition.onstart = () => {
+    micBtn.classList.add("listening");
+    promptInput.placeholder = "Listening...";
+    promptInput.value = "";
+  };
+
+  // ---- 2. RESULT (PRIMARY SEND LOGIC) ----
+  recognition.onresult = (event) => {
+    clearTimeout(silenceTimer);
+
+    const transcript = event.results[0][0].transcript;
+    promptInput.value = transcript;
+
+    updateSendBtnState?.();
+
+    if (!hasSubmitted && event.results[0].isFinal) {
+      hasSubmitted = true;
+
+      silenceTimer = setTimeout(() => {
+        recognition.stop();
+
+        if (promptInput.value.trim()) {
+          console.log("🎤 Final speech detected → Sending");
+          promptForm.requestSubmit(); // ✅ mobile-safe
+        }
+      }, 300);
+    }
+  };
+
+  // ---- 3. END (FALLBACK SAFETY NET) ----
+  recognition.onend = () => {
+    micBtn.classList.remove("listening");
+    promptInput.placeholder = "Ask Gemini";
+
+    // Mobile fallback
+    if (!hasSubmitted && promptInput.value.trim()) {
+      hasSubmitted = true;
+      console.log("🎤 onend fallback → Sending");
+      promptForm.requestSubmit();
+    }
+  };
+
+  // ---- 4. ERROR HANDLING ----
+  recognition.onerror = (event) => {
+    console.error("Voice Error:", event.error);
+    micBtn.classList.remove("listening");
+
+    if (event.error === "no-speech") {
+      promptInput.placeholder = "No speech detected...";
+    } else if (event.error === "not-allowed") {
+      alert("Microphone blocked. Check browser permissions.");
+    } else {
+      promptInput.placeholder = "Voice error: " + event.error;
+    }
+  };
+} else {
+  // SpeechRecognition not supported
+  micBtn.style.display = "none";
+}
+
+// ==========================================
+// 🔊 TEXT-TO-SPEECH (UNCHANGED, WORKING)
+// ==========================================
+
+window.speakText = (btn) => {
+  const messageDiv = btn.closest(".message-content");
+  if (!messageDiv) return;
+
+  let text = messageDiv.innerText.replace("content_copy Copy", "").trim();
+
+  window.speechSynthesis.cancel();
+
+  document.querySelectorAll(".speak-btn span").forEach((icon) => {
+    icon.innerText = "volume_up";
+  });
+
+  if (btn.classList.contains("speaking")) {
+    btn.classList.remove("speaking");
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+
+  const iconSpan = btn.querySelector("span");
+  iconSpan.innerText = "stop_circle";
+  btn.classList.add("speaking");
+
+  utterance.onend = () => {
+    iconSpan.innerText = "volume_up";
+    btn.classList.remove("speaking");
+  };
+
+  window.speechSynthesis.speak(utterance);
 };
