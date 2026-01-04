@@ -307,16 +307,11 @@ body {
 .app-footer {
     width: 100%;
     padding: 10px 0;
-    
-    /* 👇 Match background color so it looks solid at the bottom */
     background-color: var(--bg-color); 
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    
     color: #9ca3af;
     font-size: 0.85rem;
     text-align: center;
-    
-    /* 👇 Prevents it from shrinking or overlapping */
     flex-shrink: 0; 
     z-index: 50;
 }
@@ -334,46 +329,77 @@ body {
 
 /* Mobile Optimizations */
 @media screen and (max-width: 768px) {
-    .container { padding: 0.5rem; }
-    .header { font-size: 2rem; }
+    .container { 
+        padding: 0.5rem; 
+        min-height: 0; 
+    }
     
-    /* 1. Prevent parent horizontal scrolling */
-    .welcome-screen { 
-        justify-content: center; 
-        padding-top: 2rem;
-        overflow-x: hidden; /* Crucial: Stops the parent scrollbar */
+    .header { font-size: 2rem; }
+
+    .welcome-screen {
         width: 100%;
+
+        flex: 1 1 auto; 
+        justify-content: flex-start; 
+        overflow-y: auto !important; 
+        overflow-x: hidden !important; 
+        padding-top: 1rem;
+        padding-bottom: 100px; 
     }
 
-    /* 2. Fix Suggestions Layout */
+    /* 2. FIX SUGGESTIONS (Horizontal Scroll) */
     .suggestions { 
         display: flex;
-        overflow-x: auto; 
         flex-wrap: nowrap; 
         justify-content: flex-start;
-        
-        /* 👇 Safer way to stretch full width without triggering parent scroll */
-        width: calc(100% + 2rem); 
+        overflow-x: auto; 
+        margin-bottom: 20px !important; 
+        padding-bottom: 5px;
+        width: 100vw; 
         margin-left: -1rem; 
-        padding-left: 1rem;
-        padding-right: 1rem; /* Add buffer for last item */
-        
-        /* 👇 Force gap above input box */
-        margin-bottom: 24px !important; 
-        padding-bottom: 10px;
-        
-        /* 👇 Hide Scrollbar (Firefox/IE) */
-        scrollbar-width: none;  
-        -ms-overflow-style: none;  
+        padding-left: 1rem; 
+        padding-right: 1rem;
+        flex-shrink: 0;
+        scrollbar-width: none !important; 
+        -ms-overflow-style: none; 
     }
     
-    /* 👇 Hide Scrollbar (Chrome/Safari) */
     .suggestions::-webkit-scrollbar { 
-        display: none; 
+        display: none !important; 
     }
+
+    /* 3. FIX INPUT AREA */
+    .prompt-box { padding: 8px 10px; }
+    .input-wrapper { gap: 8px; }
+    .prompt-input { min-width: 0; flex: 1; }
+    #mic-btn, #send-prompt-btn, .file-actions { flex-shrink: 0; }
     
-    /* Extra safety: Hide scrollbar on welcome screen too just in case */
-    .welcome-screen::-webkit-scrollbar {
-        display: none;
+    /* 4. FOOTER MAGIC: Make footer appear at the bottom of the scroll */
+    .app-footer {
+        position: relative; 
+        z-index: 10;
+    }
+}
+
+/* 5. KEYBOARD OPEN STATE (Screen Height Shrinks) */
+@media screen and (max-height: 500px) {
+    
+    .app-footer { display: none !important; }
+    
+    .welcome-screen {
+        padding-top: 0;
+        height: auto;
+    }
+
+    .welcome-header-content { margin-bottom: 0.5rem; }
+    .header { font-size: 1.5rem; margin-bottom: 0.2rem; }
+    .sub-heading { font-size: 1rem; margin-bottom: 0.5rem; }
+    .suggestions { margin-bottom: 10px !important; min-height: 140px; }
+
+    .chats-container {
+        padding-top: 1rem !important; 
+        padding-bottom: 1rem !important;
+        height: 100%; 
+        flex: 1;
     }
 }
