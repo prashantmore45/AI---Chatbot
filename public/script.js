@@ -198,7 +198,7 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 
 
 // ==========================================
-// 🎙️ VOICE FEATURES (Smart Mobile/Desktop Handling)
+// 🎙️ VOICE FEATURES (Universal Fix)
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
@@ -213,10 +213,6 @@ if (SpeechRecognition) {
     recognition.maxAlternatives = 1;
 
     let silenceTimer = null;
-    let hasSpoken = false; 
-    
-    // 👇 Simple check to see if we are on a mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     const toggleMic = () => {
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
@@ -233,53 +229,47 @@ if (SpeechRecognition) {
 
     micBtn.addEventListener("click", toggleMic);
 
+    // --- 1. START: Clear box and show we are listening ---
     recognition.onstart = () => {
         micBtn.classList.add("listening");
         promptInput.placeholder = "Listening...";
         promptInput.value = ""; 
-        hasSpoken = false; 
     };
 
+    // --- 2. END: The Safety Net ---
+  
     recognition.onend = () => {
         micBtn.classList.remove("listening");
         promptInput.placeholder = "Ask Gemini";
 
-        // 📱 MOBILE STRATEGY: Send immediately when mic stops
-        if (isMobile && hasSpoken && promptInput.value.trim().length > 0) {
-            console.log("Mobile Auto-Send Triggered");
+        if (promptInput.value.trim().length > 0) {
+            console.log("Mic stopped. Sending message...");
             promptForm.dispatchEvent(new Event("submit"));
         }
     };
 
+    // --- 3. RESULT: Handle Text & Timer ---
     recognition.onresult = (event) => {
-        let transcript = "";
-        let isFinal = false;
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcript += event.results[i][0].transcript;
-            if (event.results[i].isFinal) isFinal = true;
-        }
-
-        promptInput.value = transcript;
-        updateSendBtnState();
-        hasSpoken = true; 
-
+        
         if (silenceTimer) clearTimeout(silenceTimer);
 
-        // 💻 DESKTOP STRATEGY: Send immediately when 'Final' is detected
-        // (We skip this for mobile because mobile browsers often delay 'Final')
-        if (!isMobile && isFinal) {
-            setTimeout(() => {
-                promptForm.dispatchEvent(new Event("submit"));
-            }, 500); // 0.5s delay for visual feedback
-            recognition.stop();
-        } 
-        
-        // 📱 MOBILE FALLBACK: If user stops talking for 2 seconds, stop mic
-        if (isMobile) {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+
+        promptInput.value = transcript;
+        updateSendBtnState(); // Light up the arrow button
+
+        silenceTimer = setTimeout(() => {
+            console.log("Silence detected. Stopping mic...");
+            recognition.stop(); // This triggers 'onend' -> which sends the form
+        }, 1200); 
+
+        if (event.results[0].isFinal) {
+            clearTimeout(silenceTimer);
             silenceTimer = setTimeout(() => {
-                recognition.stop(); // This triggers 'onend' -> which sends the form
-            }, 1000);
+                recognition.stop();
+            }, 600);
         }
     };
 
