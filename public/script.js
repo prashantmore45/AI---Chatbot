@@ -198,24 +198,24 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 
 
 // ==========================================
-// 🎙️ VOICE FEATURES (Mobile Fixed Version)
+// 🎙️ VOICE FEATURES (Auto-Send Enabled)
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
+const promptInput = document.querySelector(".prompt-input");
 
 // 1. Browser Support Check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Mobile browsers prefer this false
+    recognition.continuous = false; 
     recognition.lang = 'en-US'; 
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     // 2. Start/Stop Logic
     const toggleMic = () => {
-        // A. Security Check
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
             alert("Microphone Error: You must use HTTPS (Secure Link). Please deploy to Render.");
             return;
@@ -228,42 +228,40 @@ if (SpeechRecognition) {
         }
     };
 
-    // 3. Event Listener (Use CLICK only to prevent double-firing on mobile)
+    // 3. Event Listener
     micBtn.addEventListener("click", toggleMic);
 
     // --- Recognition Events ---
-    
     recognition.onstart = () => {
-        console.log("Voice started");
         micBtn.classList.add("listening");
         promptInput.placeholder = "Listening...";
-        promptInput.value = ""; // Clear input when starting
+        promptInput.value = ""; 
     };
 
     recognition.onend = () => {
-        console.log("Voice ended");
         micBtn.classList.remove("listening");
         promptInput.placeholder = "Ask Gemini";
     };
 
+    // 👇 THIS IS THE PART THAT HANDLES AUTO-SENDING
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         promptInput.value = transcript;
-        updateSendBtnState(); // Light up the send button
+        updateSendBtnState(); 
+
+        // 🚀 Auto-Send Logic:
+        // Wait 800ms so you can quickly see what you said, then send it.
+        setTimeout(() => {
+            promptForm.dispatchEvent(new Event("submit")); 
+        }, 800);
     };
 
-    // --- ERROR HANDLING (Crucial for Debugging) ---
+    // --- Error Handling ---
     recognition.onerror = (event) => {
         console.error("Voice Error:", event.error);
         micBtn.classList.remove("listening");
-        
-        // Show the SPECIFIC error to help us fix it
         if (event.error === 'not-allowed') {
-            alert("Microphone Blocked: Please go to Settings > Site Settings > Microphone and Allow access.");
-        } else if (event.error === 'network') {
-            promptInput.placeholder = "Network Error. Check internet.";
-        } else if (event.error === 'no-speech') {
-            promptInput.placeholder = "No speech detected. Try again.";
+            alert("Microphone Blocked: Please allow access in settings.");
         } else {
             promptInput.placeholder = "Error: " + event.error;
         }
@@ -271,26 +269,16 @@ if (SpeechRecognition) {
 
 } else {
     micBtn.style.display = "none";
-    console.log("Web Speech API not supported in this browser.");
 }
 
 // --- Text-to-Speech (Speaker) ---
 window.speakText = (btn) => {
     const messageDiv = btn.closest('.message-content');
     if (!messageDiv) return;
-
-    // Clean text
     let text = messageDiv.innerText.replace('content_copy Copy', '').trim();
-    
-    // Stop any current audio
     window.speechSynthesis.cancel();
-
-    // Reset icons
-    document.querySelectorAll('.speak-btn span').forEach(icon => {
-        icon.innerText = 'volume_up';
-    });
-
-    // Toggle behavior: If clicking the active button, just stop.
+    
+    document.querySelectorAll('.speak-btn span').forEach(icon => { icon.innerText = 'volume_up'; });
     if (btn.classList.contains('speaking')) {
         btn.classList.remove('speaking');
         return;
@@ -298,8 +286,6 @@ window.speakText = (btn) => {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    
-    // Update Icon
     const iconSpan = btn.querySelector('span');
     iconSpan.innerText = 'stop_circle';
     btn.classList.add('speaking');
@@ -308,11 +294,5 @@ window.speakText = (btn) => {
         iconSpan.innerText = 'volume_up';
         btn.classList.remove('speaking');
     };
-
-    utterance.onerror = () => {
-        iconSpan.innerText = 'volume_up';
-        btn.classList.remove('speaking');
-    };
-
     window.speechSynthesis.speak(utterance);
 };
