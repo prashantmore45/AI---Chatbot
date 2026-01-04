@@ -198,7 +198,7 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 
 
 // ==========================================
-// 🎙️ VOICE FEATURES (Real-Time Typing + Auto-Send)
+// 🎙️ VOICE FEATURES (Smart Mobile/Desktop Handling)
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
@@ -209,20 +209,23 @@ if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
     recognition.continuous = false; 
     recognition.lang = 'en-US'; 
-    
-    // 👇 KEY CHANGE: Show text immediately while speaking
     recognition.interimResults = true; 
     recognition.maxAlternatives = 1;
 
+    let silenceTimer = null;
+    let hasSpoken = false; 
+    
+    // 👇 Simple check to see if we are on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     const toggleMic = () => {
-        // Security Check
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-            alert("Microphone Error: You must use HTTPS (Secure Link). Please deploy to Render.");
+            alert("Microphone Error: You must use HTTPS. Please deploy to Render.");
             return;
         }
 
         if (micBtn.classList.contains("listening")) {
-            recognition.stop(); // This triggers 'onend'
+            recognition.stop(); 
         } else {
             recognition.start();
         }
@@ -233,48 +236,60 @@ if (SpeechRecognition) {
     recognition.onstart = () => {
         micBtn.classList.add("listening");
         promptInput.placeholder = "Listening...";
-        promptInput.value = ""; // Clear old text
+        promptInput.value = ""; 
+        hasSpoken = false; 
     };
 
     recognition.onend = () => {
         micBtn.classList.remove("listening");
         promptInput.placeholder = "Ask Gemini";
+
+        // 📱 MOBILE STRATEGY: Send immediately when mic stops
+        if (isMobile && hasSpoken && promptInput.value.trim().length > 0) {
+            console.log("Mobile Auto-Send Triggered");
+            promptForm.dispatchEvent(new Event("submit"));
+        }
     };
 
-    // 👇 UPDATED RESULT LOGIC
     recognition.onresult = (event) => {
         let transcript = "";
         let isFinal = false;
 
-        // Loop through results to separate "Final" vs "In-Progress" text
         for (let i = event.resultIndex; i < event.results.length; ++i) {
             transcript += event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                isFinal = true;
-            }
+            if (event.results[i].isFinal) isFinal = true;
         }
 
-        // 1. Show text IMMEDIATELY (Real-time feedback)
         promptInput.value = transcript;
         updateSendBtnState();
+        hasSpoken = true; 
 
-        // 2. Only Auto-Send if the sentence is "Final"
-        if (isFinal) {
+        if (silenceTimer) clearTimeout(silenceTimer);
+
+        // 💻 DESKTOP STRATEGY: Send immediately when 'Final' is detected
+        // (We skip this for mobile because mobile browsers often delay 'Final')
+        if (!isMobile && isFinal) {
             setTimeout(() => {
                 promptForm.dispatchEvent(new Event("submit"));
-            }, 800); // 0.8s delay to let you read it
+            }, 500); // 0.5s delay for visual feedback
+            recognition.stop();
+        } 
+        
+        // 📱 MOBILE FALLBACK: If user stops talking for 2 seconds, stop mic
+        if (isMobile) {
+            silenceTimer = setTimeout(() => {
+                recognition.stop(); // This triggers 'onend' -> which sends the form
+            }, 2000);
         }
     };
 
     recognition.onerror = (event) => {
         console.error("Voice Error:", event.error);
         micBtn.classList.remove("listening");
-        
-        // Handle "No Speech" (User tapped but didn't say anything)
         if (event.error === 'no-speech') {
             promptInput.placeholder = "No speech detected...";
         } else if (event.error === 'not-allowed') {
-            alert("Microphone Blocked: Please allow access in settings.");
+            alert("Microphone Blocked: Check settings.");
         } else {
             promptInput.placeholder = "Error: " + event.error;
         }
