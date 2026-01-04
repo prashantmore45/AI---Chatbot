@@ -198,43 +198,42 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 
 
 // ==========================================
-// 🎙️ VOICE FEATURES (Auto-Send Enabled)
+// 🎙️ VOICE FEATURES (Real-Time Typing + Auto-Send)
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
 
-// 1. Browser Support Check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
     recognition.continuous = false; 
     recognition.lang = 'en-US'; 
-    recognition.interimResults = false;
+    
+    // 👇 KEY CHANGE: Show text immediately while speaking
+    recognition.interimResults = true; 
     recognition.maxAlternatives = 1;
 
-    // 2. Start/Stop Logic
     const toggleMic = () => {
+        // Security Check
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
             alert("Microphone Error: You must use HTTPS (Secure Link). Please deploy to Render.");
             return;
         }
 
         if (micBtn.classList.contains("listening")) {
-            recognition.stop();
+            recognition.stop(); // This triggers 'onend'
         } else {
             recognition.start();
         }
     };
 
-    // 3. Event Listener
     micBtn.addEventListener("click", toggleMic);
 
-    // --- Recognition Events ---
     recognition.onstart = () => {
         micBtn.classList.add("listening");
         promptInput.placeholder = "Listening...";
-        promptInput.value = ""; 
+        promptInput.value = ""; // Clear old text
     };
 
     recognition.onend = () => {
@@ -242,24 +241,39 @@ if (SpeechRecognition) {
         promptInput.placeholder = "Ask Gemini";
     };
 
-    // 👇 THIS IS THE PART THAT HANDLES AUTO-SENDING
+    // 👇 UPDATED RESULT LOGIC
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        promptInput.value = transcript;
-        updateSendBtnState(); 
+        let transcript = "";
+        let isFinal = false;
 
-        // 🚀 Auto-Send Logic:
-        // Wait 800ms so you can quickly see what you said, then send it.
-        setTimeout(() => {
-            promptForm.dispatchEvent(new Event("submit")); 
-        }, 800);
+        // Loop through results to separate "Final" vs "In-Progress" text
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                isFinal = true;
+            }
+        }
+
+        // 1. Show text IMMEDIATELY (Real-time feedback)
+        promptInput.value = transcript;
+        updateSendBtnState();
+
+        // 2. Only Auto-Send if the sentence is "Final"
+        if (isFinal) {
+            setTimeout(() => {
+                promptForm.dispatchEvent(new Event("submit"));
+            }, 800); // 0.8s delay to let you read it
+        }
     };
 
-    // --- Error Handling ---
     recognition.onerror = (event) => {
         console.error("Voice Error:", event.error);
         micBtn.classList.remove("listening");
-        if (event.error === 'not-allowed') {
+        
+        // Handle "No Speech" (User tapped but didn't say anything)
+        if (event.error === 'no-speech') {
+            promptInput.placeholder = "No speech detected...";
+        } else if (event.error === 'not-allowed') {
             alert("Microphone Blocked: Please allow access in settings.");
         } else {
             promptInput.placeholder = "Error: " + event.error;
