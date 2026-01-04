@@ -202,7 +202,6 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 // ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
-const promptInput = document.querySelector(".prompt-input");
 
 // 1. Browser Support Check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
