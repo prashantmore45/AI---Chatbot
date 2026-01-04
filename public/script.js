@@ -196,8 +196,12 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
     }
 });
 
-// --- Voice Features ---
+
+// 🎙️ VOICE FEATURES
+
 const micBtn = document.querySelector("#mic-btn");
+
+// 1. Browser Support Check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
@@ -206,27 +210,96 @@ if (SpeechRecognition) {
     recognition.lang = 'en-US'; 
     recognition.interimResults = false;
 
-    micBtn.addEventListener("click", () => {
-        if (micBtn.classList.contains("listening")) recognition.stop();
-        else recognition.start();
-    });
+    // 2. toggleMic Function (Handles Start/Stop)
+    const toggleMic = (e) => {
+        e.preventDefault(); // Stop double-firing events
+        e.stopPropagation();
 
-    recognition.onstart = () => { micBtn.classList.add("listening"); promptInput.placeholder = "Listening..."; };
-    recognition.onend = () => { micBtn.classList.remove("listening"); promptInput.placeholder = "Enter a prompt here"; };
-    recognition.onresult = (event) => { promptInput.value = event.results[0][0].transcript; updateSendBtnState(); };
+        // Security Check for Mobile
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            alert("Microphone only works over HTTPS on mobile devices. Please deploy to a secure server (like Render).");
+            return;
+        }
+
+        if (micBtn.classList.contains("listening")) {
+            recognition.stop();
+        } else {
+            // Add a small delay for touch feedback
+            micBtn.classList.add("listening"); 
+            recognition.start();
+        }
+    };
+
+    // 3. Add BOTH Click and Touch Listeners for Mobile Responsiveness
+    micBtn.addEventListener("click", toggleMic);
+    micBtn.addEventListener("touchend", toggleMic);
+    
+    // 4. Speech Recognition Event Handlers
+    recognition.onstart = () => {
+        micBtn.classList.add("listening");
+        promptInput.placeholder = "Listening...";
+    };
+
+    recognition.onend = () => {
+        micBtn.classList.remove("listening");
+        promptInput.placeholder = "Enter a prompt here";
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        promptInput.value = transcript;
+        updateSendBtnState(); // Ensure the send button lights up
+    };
+
+    // Error Handling
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        micBtn.classList.remove("listening");
+        promptInput.placeholder = "Error. Try again.";
+    };
+
 } else {
     micBtn.style.display = "none";
+    console.log("Web Speech API not supported in this browser.");
 }
 
+// --- Mobile-Friendly Text-to-Speech ---
 window.speakText = (btn) => {
-    const text = btn.closest('.message-content').innerText.replace(/Copy/g, '').trim();
-    if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-        btn.querySelector('span').innerText = 'volume_up';
+    
+    const messageDiv = btn.closest('.message-content');
+    if (!messageDiv) return;
+
+    let text = messageDiv.innerText.replace('content_copy Copy', '').trim();
+ 
+    window.speechSynthesis.cancel();
+
+    document.querySelectorAll('.speak-btn span').forEach(icon => {
+        icon.innerText = 'volume_up';
+    });
+
+    if (btn.classList.contains('speaking')) {
+        btn.classList.remove('speaking');
         return;
     }
+
     const utterance = new SpeechSynthesisUtterance(text);
-    btn.querySelector('span').innerText = 'stop_circle';
-    utterance.onend = () => { btn.querySelector('span').innerText = 'volume_up'; };
+    utterance.lang = 'en-US';
+    utterance.rate = 1; 
+    utterance.pitch = 1;
+
+    const iconSpan = btn.querySelector('span');
+    iconSpan.innerText = 'stop_circle';
+    btn.classList.add('speaking');
+
+    utterance.onend = () => {
+        iconSpan.innerText = 'volume_up';
+        btn.classList.remove('speaking');
+    };
+
+    utterance.onerror = () => {
+        iconSpan.innerText = 'volume_up';
+        btn.classList.remove('speaking');
+    };
+
     window.speechSynthesis.speak(utterance);
 };
