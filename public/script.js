@@ -279,7 +279,7 @@ if (SpeechRecognition) {
         if (isMobile) {
             silenceTimer = setTimeout(() => {
                 recognition.stop(); // This triggers 'onend' -> which sends the form
-            }, 2000);
+            }, 1000);
         }
     };
 
