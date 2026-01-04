@@ -7,55 +7,24 @@ const welcomeScreen = document.querySelector(".welcome-screen");
 const sendBtn = document.querySelector("#send-prompt-btn");
 const modelSelect = document.querySelector("#model-select");
 
-
-// --- NEW: Configure Markdown + Syntax Highlighting + Copy Button ---
+// --- Markdown & Highlight Configuration ---
 const renderer = new marked.Renderer();
 renderer.code = ({ text, lang }) => {
     const validLang = !!(lang && hljs.getLanguage(lang)) ? lang : 'plaintext';
     const highlighted = hljs.highlight(text, { language: validLang }).value;
-    
-    // Create a unique ID for the code block (optional, but good practice)
-    const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
-
-    return `
-        <div class="code-block-wrapper">
-            <div class="code-header">
-                <span class="code-lang">${validLang}</span>
-                <button class="copy-btn" onclick="copyCode(this)">
-                    <span class="material-symbols-rounded">content_copy</span> Copy
-                </button>
-            </div>
-            <pre><code class="hljs ${validLang}">${highlighted}</code></pre>
-        </div>
-    `;
+    return `<div class="code-block-wrapper"><div class="code-header"><span class="code-lang">${validLang}</span><button class="copy-btn" onclick="copyCode(this)"><span class="material-symbols-rounded">content_copy</span> Copy</button></div><pre><code class="hljs ${validLang}">${highlighted}</code></pre></div>`;
 };
-
 marked.use({ renderer });
 
-// Global function to copy code (attached to window so onclick works)
 window.copyCode = (btn) => {
-    // Find the code block inside the wrapper
-    const wrapper = btn.closest('.code-block-wrapper');
-    const codeBlock = wrapper.querySelector('code');
-    const text = codeBlock.innerText; // Get raw text
-
-    // Copy to clipboard
+    const text = btn.closest('.code-block-wrapper').querySelector('code').innerText;
     navigator.clipboard.writeText(text).then(() => {
-        // Visual Feedback
         const originalHtml = btn.innerHTML;
         btn.innerHTML = `<span class="material-symbols-rounded">check</span> Copied!`;
         btn.classList.add('copied');
-
-        // Revert back after 2 seconds
-        setTimeout(() => {
-            btn.innerHTML = originalHtml;
-            btn.classList.remove('copied');
-        }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy:', err);
+        setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('copied'); }, 2000);
     });
 };
-// -----------------------------------------------------
 
 let userMessage = null;
 let attachedFile = null; 
@@ -63,16 +32,18 @@ let isGenerating = false;
 let abortController = null;
 let chatHistory = [];
 
-// Determine API URL based on environment
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api/generate-stream' 
     : 'https://ai-chatbot-backend-vzzr.onrender.com/api/generate-stream';
 
+// --- VISIBILITY LOGIC (UPDATED) ---
 const toggleWelcomeScreen = () => {
     if (chatHistory.length > 0 || isGenerating) {
-        welcomeScreen.classList.add("hidden");
+        welcomeScreen.style.display = "none";
+        chatsContainer.style.display = "flex"; // Unhide chat container
     } else {
-        welcomeScreen.classList.remove("hidden");
+        welcomeScreen.style.display = "flex";
+        chatsContainer.style.display = "none"; // Hide chat container
     }
 };
 
@@ -90,18 +61,10 @@ promptInput.addEventListener("input", updateSendBtnState);
 fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
-        // Essential: Extract only the base64 part, removing "data:image/png;base64,"
         const base64Data = e.target.result.split(',')[1]; 
-        
-        attachedFile = {
-            data: base64Data,
-            mime: file.type,
-            preview: e.target.result
-        };
-
+        attachedFile = { data: base64Data, mime: file.type, preview: e.target.result };
         filePreviewContainer.querySelector(".file-preview-img").src = e.target.result;
         filePreviewContainer.classList.add("active");
         updateSendBtnState();
@@ -119,7 +82,6 @@ document.querySelector("#cancel-file-btn").addEventListener("click", () => {
 document.querySelector("#add-file-btn").addEventListener("click", () => fileInput.click());
 
 // --- Chat Logic ---
-
 const createMessageElement = (html, type) => {
     const div = document.createElement("div");
     div.classList.add("message", type);
@@ -128,7 +90,6 @@ const createMessageElement = (html, type) => {
 };
 
 const scrollToBottom = () => {
-    // Force scroll to bottom immediately
     chatsContainer.scrollTop = chatsContainer.scrollHeight;
 };
 
@@ -142,31 +103,20 @@ const handleFormSubmit = async (e) => {
     isGenerating = true;
     promptInput.value = "";
     promptInput.disabled = true;
-    toggleWelcomeScreen();
     
-    // Render User Message
-    const userHtml = `
-        <div class="message-content">
-            ${attachedFile ? `<img src="${attachedFile.preview}" style="max-width:200px; border-radius:12px; margin-bottom:10px; display:block;">` : ''}
-            <p class="message-text">${userMessage.replace(/\n/g, "<br>")}</p>
-        </div>
-    `;
+    // Toggle Visibility immediately
+    toggleWelcomeScreen();
+
+    const userHtml = `<div class="message-content">${attachedFile ? `<img src="${attachedFile.preview}" style="max-width:200px; border-radius:12px; margin-bottom:10px; display:block;">` : ''}<p class="message-text">${userMessage.replace(/\n/g, "<br>")}</p></div>`;
     chatsContainer.appendChild(createMessageElement(userHtml, "user-message"));
     scrollToBottom();
 
-    // Reset File UI
-    const currentImage = attachedFile; // Store temporarily for API call
+    const currentImage = attachedFile;
     attachedFile = null;
     filePreviewContainer.classList.remove("active");
     updateSendBtnState();
 
-    // Render Bot Skeleton
-    const botHtml = `
-        <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" class="avatar">
-        <div class="message-content">
-            <p class="message-text">Thinking...</p>
-        </div>
-    `;
+    const botHtml = `<div class="bot-message message"><img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" class="avatar"><div class="message-content"><div class="message-text">Thinking...</div><button class="speak-btn" onclick="speakText(this)"><span class="material-symbols-rounded">volume_up</span></button></div></div>`;
     const botMsgDiv = createMessageElement(botHtml, "bot-message");
     botMsgDiv.classList.add("loading");
     chatsContainer.appendChild(botMsgDiv);
@@ -183,7 +133,6 @@ const handleFormSubmit = async (e) => {
                 message: userMessage,
                 history: chatHistory,
                 model: modelSelect.value,
-                // Ensure image structure matches exactly what Google SDK expects
                 image: currentImage ? { inlineData: { data: currentImage.data, mimeType: currentImage.mime } } : null
             }),
             signal: abortController.signal
@@ -201,7 +150,6 @@ const handleFormSubmit = async (e) => {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split("\n");
             
@@ -209,24 +157,15 @@ const handleFormSubmit = async (e) => {
                 if (line.startsWith("data: ") && line !== "data: [DONE]") {
                     try {
                         const jsonStr = line.replace("data: ", "");
-                        const textChunk = JSON.parse(jsonStr);
-                        
-                        accumulatedText += textChunk;
-                        // Render with Markdown
+                        accumulatedText += JSON.parse(jsonStr);
                         textElement.innerHTML = marked.parse(accumulatedText, { breaks: true });
-                        
-                        // Scroll automatically while generating
                         scrollToBottom(); 
-                    } catch (e) {
-                        // Ignore parse errors for partial chunks
-                    }
+                    } catch (e) {}
                 }
             }
         }
-
         chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
         chatHistory.push({ role: "model", parts: [{ text: accumulatedText }] });
-
     } catch (error) {
         textElement.innerHTML = `<span style="color:#ff8a80">Error: ${error.message}</span>`;
         botMsgDiv.classList.remove("loading");
@@ -240,22 +179,15 @@ const handleFormSubmit = async (e) => {
 
 promptForm.addEventListener("submit", handleFormSubmit);
 
-// Handle Suggestion Clicks
 document.querySelectorAll(".suggestions-item").forEach(item => {
     item.addEventListener("click", () => {
-        const text = item.querySelector(".text").innerText;
-        promptInput.value = text;
+        promptInput.value = item.querySelector(".text").innerText;
         updateSendBtnState();
         promptForm.dispatchEvent(new Event("submit"));
     });
 });
 
-// Theme Toggle
-document.querySelector("#theme-toggle-btn").addEventListener("click", () => {
-    document.body.classList.toggle("light-mode");
-});
-
-// Delete Chats
+document.querySelector("#theme-toggle-btn").addEventListener("click", () => document.body.classList.toggle("light-mode"));
 document.querySelector("#delete-chats-btn").addEventListener("click", () => {
     if (confirm("Delete all chat history?")) {
         chatsContainer.innerHTML = "";
@@ -263,3 +195,38 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
         toggleWelcomeScreen();
     }
 });
+
+// --- Voice Features ---
+const micBtn = document.querySelector("#mic-btn");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false; 
+    recognition.lang = 'en-US'; 
+    recognition.interimResults = false;
+
+    micBtn.addEventListener("click", () => {
+        if (micBtn.classList.contains("listening")) recognition.stop();
+        else recognition.start();
+    });
+
+    recognition.onstart = () => { micBtn.classList.add("listening"); promptInput.placeholder = "Listening..."; };
+    recognition.onend = () => { micBtn.classList.remove("listening"); promptInput.placeholder = "Enter a prompt here"; };
+    recognition.onresult = (event) => { promptInput.value = event.results[0][0].transcript; updateSendBtnState(); };
+} else {
+    micBtn.style.display = "none";
+}
+
+window.speakText = (btn) => {
+    const text = btn.closest('.message-content').innerText.replace(/Copy/g, '').trim();
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        btn.querySelector('span').innerText = 'volume_up';
+        return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    btn.querySelector('span').innerText = 'stop_circle';
+    utterance.onend = () => { btn.querySelector('span').innerText = 'volume_up'; };
+    window.speechSynthesis.speak(utterance);
+};
