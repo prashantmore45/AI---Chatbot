@@ -197,65 +197,77 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
 });
 
 
-// 🎙️ VOICE FEATURES
+// ==========================================
+// 🎙️ VOICE FEATURES (Mobile Fixed Version)
+// ==========================================
 
 const micBtn = document.querySelector("#mic-btn");
+const promptInput = document.querySelector(".prompt-input");
 
 // 1. Browser Support Check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; 
+    recognition.continuous = false; // Mobile browsers prefer this false
     recognition.lang = 'en-US'; 
     recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
 
-    // 2. toggleMic Function (Handles Start/Stop)
-    const toggleMic = (e) => {
-        e.preventDefault(); // Stop double-firing events
-        e.stopPropagation();
-
-        // Security Check for Mobile
+    // 2. Start/Stop Logic
+    const toggleMic = () => {
+        // A. Security Check
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-            alert("Microphone only works over HTTPS on mobile devices. Please deploy to a secure server (like Render).");
+            alert("Microphone Error: You must use HTTPS (Secure Link). Please deploy to Render.");
             return;
         }
 
         if (micBtn.classList.contains("listening")) {
             recognition.stop();
         } else {
-            // Add a small delay for touch feedback
-            micBtn.classList.add("listening"); 
             recognition.start();
         }
     };
 
-    // 3. Add BOTH Click and Touch Listeners for Mobile Responsiveness
+    // 3. Event Listener (Use CLICK only to prevent double-firing on mobile)
     micBtn.addEventListener("click", toggleMic);
-    micBtn.addEventListener("touchend", toggleMic);
+
+    // --- Recognition Events ---
     
-    // 4. Speech Recognition Event Handlers
     recognition.onstart = () => {
+        console.log("Voice started");
         micBtn.classList.add("listening");
         promptInput.placeholder = "Listening...";
+        promptInput.value = ""; // Clear input when starting
     };
 
     recognition.onend = () => {
+        console.log("Voice ended");
         micBtn.classList.remove("listening");
-        promptInput.placeholder = "Enter a prompt here";
+        promptInput.placeholder = "Ask Gemini";
     };
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         promptInput.value = transcript;
-        updateSendBtnState(); // Ensure the send button lights up
+        updateSendBtnState(); // Light up the send button
     };
 
-    // Error Handling
+    // --- ERROR HANDLING (Crucial for Debugging) ---
     recognition.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
+        console.error("Voice Error:", event.error);
         micBtn.classList.remove("listening");
-        promptInput.placeholder = "Error. Try again.";
+        
+        // Show the SPECIFIC error to help us fix it
+        if (event.error === 'not-allowed') {
+            alert("Microphone Blocked: Please go to Settings > Site Settings > Microphone and Allow access.");
+        } else if (event.error === 'network') {
+            promptInput.placeholder = "Network Error. Check internet.";
+        } else if (event.error === 'no-speech') {
+            promptInput.placeholder = "No speech detected. Try again.";
+        } else {
+            promptInput.placeholder = "Error: " + event.error;
+        }
     };
 
 } else {
@@ -263,20 +275,23 @@ if (SpeechRecognition) {
     console.log("Web Speech API not supported in this browser.");
 }
 
-// --- Mobile-Friendly Text-to-Speech ---
+// --- Text-to-Speech (Speaker) ---
 window.speakText = (btn) => {
-    
     const messageDiv = btn.closest('.message-content');
     if (!messageDiv) return;
 
+    // Clean text
     let text = messageDiv.innerText.replace('content_copy Copy', '').trim();
- 
+    
+    // Stop any current audio
     window.speechSynthesis.cancel();
 
+    // Reset icons
     document.querySelectorAll('.speak-btn span').forEach(icon => {
         icon.innerText = 'volume_up';
     });
 
+    // Toggle behavior: If clicking the active button, just stop.
     if (btn.classList.contains('speaking')) {
         btn.classList.remove('speaking');
         return;
@@ -284,9 +299,8 @@ window.speakText = (btn) => {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 1; 
-    utterance.pitch = 1;
-
+    
+    // Update Icon
     const iconSpan = btn.querySelector('span');
     iconSpan.innerText = 'stop_circle';
     btn.classList.add('speaking');
