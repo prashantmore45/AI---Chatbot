@@ -94,7 +94,8 @@
 
     <footer class="app-footer">
         <div class="footer-content">
-            <p>Built by <strong>Prashant More</strong> | Powered by Google Gemini</p>
+            <p>&copy; 2025–<span id="year"></span> Prashant More. All rights reserved.</p>
+            <p>AI Chatbot • Built by <strong>Prashant More</strong> • Powered by Google Gemini</p>
             <div class="social-links">
                 <a href="https://github.com/prashantmore45" target="_blank" title="GitHub">
                     <i class="fab fa-github"></i> GitHub
@@ -105,7 +106,9 @@
             </div>
         </div>
     </footer>
-    
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
